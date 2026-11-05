@@ -1,0 +1,16 @@
+{
+  "name": "yosa-ai",
+  "version": "1.0.0",
+  "description": "Yosa AI - Sesli Telefon Araması Yapan, Google News Özetleyen ve Ödev Kaydeden Yapay Zeka Asistanı (Android APK + Web)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build:assets": "python3 scripts/generate-assets.py",
+    "build:apk": "bash scripts/build-apk.sh"
+  },
+  "dependencies": {
+    "compression": "^1.7.5",
+    "express": "^4.21.2"
+  }
+}
