@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#070d19" />
+  <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Yosa AI — Sesli Arama &amp; Ödev Asistanı</title>
+  <title>Yosa AI</title>
   <link rel="icon" type="image/png" href="icons/yosa-icon.png" />
   <link rel="stylesheet" href="css/app.css" />
 </head>
@@ -14,228 +14,265 @@
   <div id="phone-frame" class="phone-frame">
 
     <!-- =========================================================
-         1. MAIN HUB SCREEN (Zero Keyboard — Pure Voice & Touch)
+         1. MAIN APP SHELL (3 Clean Architectural Tabs — Zero Keyboard)
          ========================================================= -->
     <main id="screen-hub" class="screen active">
+      <!-- Minimal Luxury Header -->
       <header class="top-bar">
-        <div class="brand-row">
-          <img src="icons/yosa-icon.png" alt="Yosa AI" class="brand-logo" />
-          <div>
-            <h1 class="brand-title">Yosa AI</h1>
-            <div class="brand-status">
-              <span class="status-dot"></span>
-              <span id="hub-status-text">Sesli Telefon Asistanı Hazır</span>
-            </div>
-          </div>
+        <div class="brand-lockup">
+          <img src="icons/yosa-icon.png" alt="Yosa" class="brand-mark" />
+          <span class="brand-wordmark">Yosa</span>
+          <span class="brand-tag">AI</span>
         </div>
-        <a id="btn-download-apk" href="/download/Yosa-AI.apk" download="Yosa-AI.apk" class="apk-pill">
-          <span>📲</span>
-          <span>APK İndir</span>
-        </a>
+
+        <div class="header-right">
+          <button type="button" id="chip-open-voices" class="voice-pill-btn">
+            <span class="live-dot"></span>
+            <span id="label-current-voice">Elif</span>
+          </button>
+          <a id="btn-download-apk" href="/download/Yosa-AI.apk" download="Yosa-AI.apk" class="apk-btn" title="Android APK İndir">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>APK</span>
+          </a>
+        </div>
       </header>
 
-      <div class="hub-scroll">
-        <!-- Hero Call Card -->
-        <section class="hero-card">
-          <div class="hero-profile">
-            <div class="hero-avatar-wrap">
-              <img src="icons/yosa-icon.png" alt="Yosa AI" class="hero-avatar" />
-              <span class="online-ring"></span>
-            </div>
-            <div class="hero-meta">
-              <div class="hero-name-row">
-                <span class="hero-name">Yosa AI</span>
-                <span class="no-kb-badge">🎙️ Klavyesiz Tam Sesli</span>
-              </div>
-              <p class="hero-desc">
-                Seni zil sesiyle arar, Google News'ten maç ve haberleri özetler, ödevlerini sesle kaydeder.
-              </p>
-              <div class="active-prefs-row">
-                <button type="button" id="chip-open-voices" class="pref-chip">
-                  <span>🗣️ Ses:</span> <strong id="label-current-voice">Elif</strong>
-                </button>
-                <button type="button" id="chip-open-ringtones" class="pref-chip">
-                  <span>🔔 Zil:</span> <strong id="label-current-ringtone">Yosa İmza</strong>
-                </button>
-              </div>
-            </div>
+      <!-- Dynamic-Island Style Scheduled Call Capsule -->
+      <div id="scheduled-banner" class="dynamic-island hidden">
+        <div class="island-left">
+          <span class="island-pulse"></span>
+          <div class="island-texts">
+            <strong id="sched-countdown-text">00:10</strong>
+            <span id="sched-reason-text">Zamanlı Arama</span>
           </div>
-
-          <div class="hero-call-actions">
-            <button type="button" id="btn-incoming-now" class="call-cta incoming-cta">
-              <span class="cta-icon">📲</span>
-              <span class="cta-texts">
-                <strong>Yosa Beni Arasın</strong>
-                <small>Zil sesiyle gelen arama başlat</small>
-              </span>
-            </button>
-            <button type="button" id="btn-outbound-call" class="call-cta outbound-cta">
-              <span class="cta-icon">📞</span>
-              <span class="cta-texts">
-                <strong>Yosa'yı Ara</strong>
-                <small>Doğrudan sesli görüşmeye bağlan</small>
-              </span>
-            </button>
-          </div>
-        </section>
-
-        <!-- Active Scheduled Call Banner -->
-        <section id="scheduled-banner" class="scheduled-banner hidden">
-          <div class="sched-left">
-            <span class="sched-pulse-icon">⏰</span>
-            <div>
-              <strong id="sched-countdown-text">00:10 sonra Yosa seni arayacak</strong>
-              <small id="sched-reason-text">Zamanlı Yosa AI Araması</small>
-            </div>
-          </div>
-          <button type="button" id="btn-cancel-schedule" class="sched-cancel-btn">İptal</button>
-        </section>
-
-        <!-- Quick Voice Command Bar (Outside Call) -->
-        <section class="section-card voice-quick-card">
-          <div class="section-head">
-            <div>
-              <h2>🎙️ Hızlı Sesli Komut</h2>
-              <p>Tuşa dokun ve konuş: haber sor, ödev kaydet veya arama kur</p>
-            </div>
-          </div>
-          <button type="button" id="btn-hub-voice" class="hub-mic-btn">
-            <span class="hub-mic-circle" id="hub-mic-icon">🎙️</span>
-            <span id="hub-mic-label">Konuşmak İçin Dokun</span>
-          </button>
-          <div id="hub-voice-feedback" class="hub-voice-feedback hidden"></div>
-          <div class="quick-try-row">
-            <button type="button" class="try-pill" data-quick-call="Galatasaray maçını özetle">
-              ⚽ "Galatasaray maçını özetle"
-            </button>
-            <button type="button" class="try-pill" data-quick-call="Bugün gündemde ne var?">
-              📰 "Gündemde ne var?"
-            </button>
-          </div>
-        </section>
-
-        <!-- Scheduled / Proactive Call Section -->
-        <section class="section-card">
-          <div class="section-head">
-            <div>
-              <h2>⏰ Zamanlı Beni Ara</h2>
-              <p>Süre seç veya sesle söyle; süre dolunca telefonun zil sesiyle çalsın</p>
-            </div>
-          </div>
-          <div class="timer-grid">
-            <button type="button" class="timer-btn" data-sec="5" data-reason="Hızlı Test Araması">
-              <strong>5 Saniye</strong>
-              <span>Hızlı Test</span>
-            </button>
-            <button type="button" class="timer-btn" data-sec="15" data-reason="Gündem & Maç Özeti Araması">
-              <strong>15 Saniye</strong>
-              <span>Haber Özeti</span>
-            </button>
-            <button type="button" class="timer-btn" data-sec="30" data-reason="Ödev Kontrol Araması">
-              <strong>30 Saniye</strong>
-              <span>Ödev Kontrolü</span>
-            </button>
-            <button type="button" class="timer-btn" data-sec="60" data-reason="1 Dakika Hatırlatma Araması">
-              <strong>1 Dakika</strong>
-              <span>Hatırlatıcı</span>
-            </button>
-            <button type="button" class="timer-btn" data-sec="300" data-reason="5 Dakika Mola Sonu Araması">
-              <strong>5 Dakika</strong>
-              <span>Ders Molası</span>
-            </button>
-            <button type="button" id="btn-voice-schedule" class="timer-btn voice-timer-btn">
-              <strong>🎙️ Sesle Kur</strong>
-              <span>"2 dk sonra ara"</span>
-            </button>
-          </div>
-        </section>
-
-        <!-- Homework Section -->
-        <section class="section-card">
-          <div class="section-head">
-            <div>
-              <h2>📚 Ödevlerim <span id="hw-count-badge" class="count-badge">0</span></h2>
-              <p>Klavye yok — dersini ve konuyu sesle söyle, Yosa kaydetsin</p>
-            </div>
-            <div class="hw-head-actions">
-              <button type="button" id="btn-read-all-hw" class="mini-action-btn" title="Ödevleri Sesli Oku">
-                🔊 Oku
-              </button>
-            </div>
-          </div>
-
-          <button type="button" id="btn-voice-add-hw" class="voice-add-hw-btn">
-            <span>🎙️</span>
-            <span>Sesle Yeni Ödev Kaydet</span>
-          </button>
-
-          <div id="hw-list" class="hw-list"></div>
-        </section>
-
-        <!-- Voice & Ringtone Settings Trigger Row -->
-        <section class="settings-grid">
-          <button type="button" id="btn-open-voices" class="setting-tile">
-            <span class="tile-icon">🗣️</span>
-            <div class="tile-info">
-              <strong>Ses Seçenekleri</strong>
-              <span id="tile-voice-sub">6 farklı Türkçe ses karakteri</span>
-            </div>
-          </button>
-          <button type="button" id="btn-open-ringtones" class="setting-tile">
-            <span class="tile-icon">🔔</span>
-            <div class="tile-info">
-              <strong>Zil Sesi Seçimi</strong>
-              <span id="tile-ring-sub">5 gerçekçi telefon zil sesi</span>
-            </div>
-          </button>
-        </section>
+        </div>
+        <button type="button" id="btn-cancel-schedule" class="island-cancel" aria-label="İptal">İptal</button>
       </div>
+
+      <!-- TAB 1: ASİSTAN (Centerpiece Water-Droplet & Call Dock) -->
+      <section id="tab-assistant" class="tab-panel active">
+        <div class="droplet-stage">
+          <button type="button" id="btn-hub-voice" class="droplet-orb-btn" aria-label="Konuşmak için dokun">
+            <span class="orb-ring ring-a"></span>
+            <span class="orb-ring ring-b"></span>
+            <span class="orb-glow"></span>
+            <img src="icons/yosa-droplet.png" alt="Yosa Droplet" class="droplet-hero-img" />
+          </button>
+
+          <div class="stage-status">
+            <p id="hub-mic-label" class="stage-headline">Dokun ve konuş</p>
+            <p id="hub-voice-feedback" class="stage-subtext">
+              Maç özeti sor, gündemi dinle veya ödevini sesle kaydet
+            </p>
+          </div>
+
+          <div class="prompt-rail">
+            <button type="button" class="glass-chip" data-quick-call="Galatasaray maçını özetle">
+              Galatasaray maçını özetle
+            </button>
+            <button type="button" class="glass-chip" data-quick-call="Bugün gündemde ne var?">
+              Gündemde ne var?
+            </button>
+            <button type="button" class="glass-chip" data-quick-call="Ödevlerimi oku">
+              Ödevlerimi oku
+            </button>
+          </div>
+        </div>
+
+        <div class="call-dock">
+          <button type="button" id="btn-incoming-now" class="dock-cta cta-white">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 2 16 8 22 8"/>
+              <line x1="23" y1="1" x2="16" y2="8"/>
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span>Beni Arasın</span>
+          </button>
+
+          <button type="button" id="btn-outbound-call" class="dock-cta cta-obsidian">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span>Yosa'yı Ara</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 2: ÖDEVLER & ZAMANLI ARAMA -->
+      <section id="tab-tasks" class="tab-panel">
+        <div class="segmented-bar">
+          <button type="button" class="seg-btn active" data-task-sub="hw">
+            <span>Ödevlerim</span>
+            <span id="hw-count-badge" class="seg-count">0</span>
+          </button>
+          <button type="button" class="seg-btn" data-task-sub="timer">
+            <span>Zamanlı Arama</span>
+          </button>
+        </div>
+
+        <!-- Subview: Homework -->
+        <div id="subview-hw" class="subview active">
+          <div class="hw-toolbar">
+            <button type="button" id="btn-voice-add-hw" class="voice-capture-bar">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+              </svg>
+              <span id="label-add-hw">Sesle Ödev Kaydet</span>
+            </button>
+
+            <button type="button" id="btn-read-all-hw" class="icon-square-btn" title="Ödevleri Sesli Oku">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+              </svg>
+            </button>
+          </div>
+
+          <div id="hw-list" class="studio-list"></div>
+        </div>
+
+        <!-- Subview: Scheduled Call Timer -->
+        <div id="subview-timer" class="subview">
+          <p class="panel-caption">
+            Süre seçtiğinde veya sesle söylediğinde Yosa AI belirlediğin anda telefonunu zil sesiyle çaldırır.
+          </p>
+          <div class="bento-timers">
+            <button type="button" class="bento-timer-card" data-sec="5" data-reason="Hızlı Test Araması">
+              <span class="bento-val">05<small>sn</small></span>
+              <span class="bento-lbl">Hızlı Test</span>
+            </button>
+            <button type="button" class="bento-timer-card" data-sec="15" data-reason="Gündem & Maç Özeti">
+              <span class="bento-val">15<small>sn</small></span>
+              <span class="bento-lbl">Haber Özeti</span>
+            </button>
+            <button type="button" class="bento-timer-card" data-sec="30" data-reason="Ödev Kontrol Araması">
+              <span class="bento-val">30<small>sn</small></span>
+              <span class="bento-lbl">Ödev Kontrolü</span>
+            </button>
+            <button type="button" class="bento-timer-card" data-sec="60" data-reason="1 Dakika Hatırlatma">
+              <span class="bento-val">01<small>dk</small></span>
+              <span class="bento-lbl">Hatırlatıcı</span>
+            </button>
+            <button type="button" class="bento-timer-card" data-sec="300" data-reason="Ders Molası Sonu">
+              <span class="bento-val">05<small>dk</small></span>
+              <span class="bento-lbl">Ders Molası</span>
+            </button>
+            <button type="button" id="btn-voice-schedule" class="bento-timer-card bento-voice-card">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+              </svg>
+              <span class="bento-lbl">Sesle Zaman Kur</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: SES & ZİL STÜDYOSU -->
+      <section id="tab-audio" class="tab-panel">
+        <div class="segmented-bar">
+          <button type="button" class="seg-btn active" data-audio-sub="voices">
+            <span>Ses Karakterleri</span>
+          </button>
+          <button type="button" class="seg-btn" data-audio-sub="ringtones">
+            <span>Zil Sesleri</span>
+          </button>
+        </div>
+
+        <div id="subview-voices" class="subview active">
+          <div class="speed-bar">
+            <span class="speed-caption">Konuşma Hızı</span>
+            <div id="speed-pills" class="speed-group"></div>
+          </div>
+          <div id="voices-list" class="studio-list"></div>
+        </div>
+
+        <div id="subview-ringtones" class="subview">
+          <p class="panel-caption">Gelen Yosa AI aramalarında çalacak telefon zil sesini seç.</p>
+          <div id="ringtones-list" class="studio-list"></div>
+        </div>
+      </section>
+
+      <!-- Minimalist Bottom Navigation Bar -->
+      <nav class="bottom-nav" aria-label="Ana Menü">
+        <button type="button" class="nav-item active" data-tab="assistant">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+          </svg>
+          <span>Asistan</span>
+        </button>
+        <button type="button" class="nav-item" data-tab="tasks">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="3"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span>Ödev &amp; Zaman</span>
+        </button>
+        <button type="button" class="nav-item" data-tab="audio">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="10" x2="4" y2="14"/>
+            <line x1="8" y1="7" x2="8" y2="17"/>
+            <line x1="12" y1="4" x2="12" y2="20"/>
+            <line x1="16" y1="7" x2="16" y2="17"/>
+            <line x1="20" y1="10" x2="20" y2="14"/>
+          </svg>
+          <span>Ses &amp; Zil</span>
+        </button>
+      </nav>
     </main>
 
     <!-- =========================================================
-         2. REALISTIC INCOMING PHONE CALL SCREEN ("Yosa AI Arıyor...")
+         2. LUXURY MONOCHROME INCOMING CALL SCREEN ("Yosa AI Arıyor")
          ========================================================= -->
-    <section id="screen-incoming" class="screen call-screen incoming-screen">
-      <div class="call-aurora"></div>
+    <section id="screen-incoming" class="screen telephony-screen">
+      <div class="telephony-vignette"></div>
 
-      <div class="incoming-top">
-        <span class="incoming-label">GELEN SESLİ ARAMA</span>
-        <h2 class="incoming-caller-name">Yosa AI</h2>
-        <p id="incoming-reason" class="incoming-reason">Mobil Yapay Zeka Asistanı</p>
-        <div class="incoming-voice-tag">
-          <span id="incoming-voice-pill">Ses: Elif • Zil Çalıyor...</span>
+      <div class="telephony-top">
+        <span class="eyebrow-tag">GELEN SESLİ ARAMA</span>
+        <h2 class="caller-display-name">Yosa AI</h2>
+        <p id="incoming-reason" class="caller-subline">Sesli Asistan</p>
+        <span id="incoming-voice-pill" class="caller-meta-pill">Elif • Yosa İmza</span>
+      </div>
+
+      <div class="telephony-center">
+        <div class="incoming-droplet-wrap">
+          <span class="ripple-line rl-1"></span>
+          <span class="ripple-line rl-2"></span>
+          <span class="ripple-line rl-3"></span>
+          <img src="icons/yosa-droplet.png" alt="Yosa AI" class="call-droplet-img" />
         </div>
       </div>
 
-      <div class="incoming-center">
-        <div class="pulse-rings">
-          <span class="p-ring r1"></span>
-          <span class="p-ring r2"></span>
-          <span class="p-ring r3"></span>
-          <div class="caller-avatar-large">
-            <img src="icons/yosa-icon.png" alt="Yosa AI" />
-          </div>
-        </div>
-      </div>
-
-      <div class="incoming-bottom">
-        <button type="button" id="btn-snooze-call" class="snooze-pill">
-          ⏰ 1 Dakika Sonra Tekrar Ara
+      <div class="telephony-bottom">
+        <button type="button" id="btn-snooze-call" class="snooze-capsule">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <polyline points="12 7 12 12 15 14"/>
+          </svg>
+          <span>1 dk sonra hatırlat</span>
         </button>
 
-        <div class="incoming-buttons-row">
-          <div class="call-btn-col">
-            <button type="button" id="btn-decline-call" class="round-call-btn decline-btn" aria-label="Reddet">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+        <div class="incoming-actions-row">
+          <div class="call-action-wrap">
+            <button type="button" id="btn-decline-call" class="circle-phone-btn btn-hangup" aria-label="Reddet">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
                 <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C3.36 8.77 7.47 7 12 7s8.64 1.77 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
               </svg>
             </button>
             <span>Reddet</span>
           </div>
 
-          <div class="call-btn-col">
-            <button type="button" id="btn-answer-call" class="round-call-btn answer-btn" aria-label="Cevapla">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+          <div class="call-action-wrap">
+            <button type="button" id="btn-answer-call" class="circle-phone-btn btn-answer" aria-label="Cevapla">
+              <svg viewBox="0 0 24 24" width="27" height="27" fill="currentColor">
                 <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
               </svg>
             </button>
@@ -246,94 +283,131 @@
     </section>
 
     <!-- =========================================================
-         3. REALISTIC ACTIVE IN-CALL SCREEN ("Görüşmede")
+         3. LUXURY ACTIVE IN-CALL SCREEN ("Görüşmede")
          ========================================================= -->
-    <section id="screen-incall" class="screen call-screen incall-screen">
-      <div class="call-aurora active-aurora"></div>
+    <section id="screen-incall" class="screen telephony-screen incall-layout">
+      <div class="telephony-vignette"></div>
 
-      <div class="incall-header">
-        <div class="incall-badges">
-          <span class="hd-badge">HD SES</span>
-          <span id="incall-voice-badge" class="voice-live-badge">Ses: Elif</span>
+      <div class="incall-top">
+        <div class="incall-pill-row">
+          <span id="incall-voice-badge" class="caller-meta-pill">HD • Elif</span>
         </div>
-        <h2 class="incall-name">Yosa AI</h2>
-        <div id="incall-timer" class="incall-timer">00:00</div>
-        <div id="incall-state-label" class="incall-state-label">Bağlanıyor...</div>
+        <h2 class="incall-caller">Yosa AI</h2>
+        <div id="incall-timer" class="incall-clock">00:00</div>
+        <div id="incall-state-label" class="incall-status">Bağlanıyor</div>
       </div>
 
-      <!-- Acoustic Voice Visualizer & Live Transcript -->
-      <div class="incall-stage">
-        <div id="voice-visualizer" class="voice-visualizer idle">
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
-          <span class="v-bar"></span>
+      <!-- Living Liquid Droplet Visualizer + Live Transcript -->
+      <div class="incall-center">
+        <div id="voice-visualizer" class="incall-droplet-orb idle">
+          <span class="acoustic-halo h1"></span>
+          <span class="acoustic-halo h2"></span>
+          <img src="icons/yosa-droplet.png" alt="Yosa AI" class="incall-droplet-img" />
         </div>
 
-        <div class="live-caption-box">
-          <div id="caption-speaker" class="caption-speaker">Yosa AI</div>
-          <p id="caption-text" class="caption-text">Arama bağlanıyor...</p>
+        <div class="transcript-panel">
+          <span id="caption-speaker" class="transcript-author">YOSA</span>
+          <p id="caption-text" class="transcript-body">Arama bağlanıyor...</p>
         </div>
 
-        <!-- Fetched Google News Source Chips (shown when news is summarized) -->
-        <div id="incall-news-strip" class="incall-news-strip hidden"></div>
+        <div id="incall-news-strip" class="news-pill-strip hidden"></div>
       </div>
 
-      <!-- Tap-to-Ask Voice Topic Chips (Zero Keyboard!) -->
-      <div class="incall-prompts-scroll">
-        <button type="button" class="incall-chip" data-say="Galatasaray maçını özetle">
-          ⚽ Galatasaray maçını özetle
+      <!-- Subtle Voice Topic Chips -->
+      <div class="prompt-rail incall-rail">
+        <button type="button" class="glass-chip" data-say="Galatasaray maçını özetle">
+          Galatasaray maçını özetle
         </button>
-        <button type="button" class="incall-chip" data-say="Bugün gündemde ne var?">
-          📰 Gündemde ne var?
+        <button type="button" class="glass-chip" data-say="Bugün gündemde ne var?">
+          Gündemde ne var?
         </button>
-        <button type="button" class="incall-chip" data-say="Ödevlerimi oku">
-          📚 Ödevlerimi oku
+        <button type="button" class="glass-chip" data-say="Ödevlerimi oku">
+          Ödevlerimi oku
         </button>
-        <button type="button" class="incall-chip" data-say="Matematik ödevimi kaydet Cuma gününe sayfa 48 çözülecek">
-          📐 Örnek Ödev Kaydet
+        <button type="button" class="glass-chip" data-say="Matematik ödevimi kaydet Cuma gününe sayfa 48 çözülecek">
+          Matematik ödevi kaydet
         </button>
-        <button type="button" class="incall-chip" data-say="1 dakika sonra beni tekrar ara">
-          ⏰ 1 dk sonra ara
+        <button type="button" class="glass-chip" data-say="1 dakika sonra beni tekrar ara">
+          1 dk sonra ara
         </button>
       </div>
 
-      <!-- Realistic 6-Button Smartphone Call Controls (NO KEYPAD!) -->
-      <div class="incall-controls-grid">
-        <button type="button" id="btn-call-pushtotalk" class="call-ctrl-btn highlight">
-          <span class="ctrl-ico">🎙️</span>
+      <!-- Authentic iOS Frosted Circular Telephony Matrix (Zero Keypad!) -->
+      <div class="ios-call-matrix">
+        <div class="matrix-cell">
+          <button type="button" id="btn-call-pushtotalk" class="matrix-circle active-white">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+          </button>
           <span id="label-pushtotalk">Konuş</span>
-        </button>
-        <button type="button" id="btn-call-mute" class="call-ctrl-btn">
-          <span class="ctrl-ico" id="ico-mute">🎤</span>
+        </div>
+
+        <div class="matrix-cell">
+          <button type="button" id="btn-call-mute" class="matrix-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/>
+              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+          </button>
           <span id="label-mute">Sessiz</span>
-        </button>
-        <button type="button" id="btn-call-speaker" class="call-ctrl-btn active-toggle">
-          <span class="ctrl-ico">🔊</span>
+        </div>
+
+        <div class="matrix-cell">
+          <button type="button" id="btn-call-speaker" class="matrix-circle toggled">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+          </button>
           <span>Hoparlör</span>
-        </button>
-        <button type="button" id="btn-call-voice" class="call-ctrl-btn">
-          <span class="ctrl-ico">🗣️</span>
+        </div>
+
+        <div class="matrix-cell">
+          <button type="button" id="btn-call-voice" class="matrix-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="10" x2="4" y2="14"/>
+              <line x1="8" y1="7" x2="8" y2="17"/>
+              <line x1="12" y1="4" x2="12" y2="20"/>
+              <line x1="16" y1="7" x2="16" y2="17"/>
+              <line x1="20" y1="10" x2="20" y2="14"/>
+            </svg>
+          </button>
           <span>Ses Seç</span>
-        </button>
-        <button type="button" id="btn-call-hw" class="call-ctrl-btn">
-          <span class="ctrl-ico">📚</span>
-          <span>Ödevlerim</span>
-        </button>
-        <button type="button" id="btn-call-news" class="call-ctrl-btn">
-          <span class="ctrl-ico">📰</span>
+        </div>
+
+        <div class="matrix-cell">
+          <button type="button" id="btn-call-hw" class="matrix-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="3"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </button>
+          <span>Ödevler</span>
+        </div>
+
+        <div class="matrix-cell">
+          <button type="button" id="btn-call-news" class="matrix-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <line x1="3.6" y1="9" x2="20.4" y2="9"/>
+              <line x1="3.6" y1="15" x2="20.4" y2="15"/>
+              <path d="M11.5 3a17 17 0 0 0 0 18"/>
+              <path d="M12.5 3a17 17 0 0 1 0 18"/>
+            </svg>
+          </button>
           <span>Haberler</span>
-        </button>
+        </div>
       </div>
 
-      <div class="incall-hangup-row">
-        <button type="button" id="btn-hangup-call" class="round-call-btn decline-btn" aria-label="Aramayı Kapat">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+      <div class="hangup-dock">
+        <button type="button" id="btn-hangup-call" class="circle-phone-btn btn-hangup" aria-label="Aramayı Sonlandır">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
             <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C3.36 8.77 7.47 7 12 7s8.64 1.77 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
           </svg>
         </button>
@@ -341,56 +415,37 @@
     </section>
 
     <!-- =========================================================
-         BOTTOM SHEETS (Voices, Ringtones, In-Call Homework & News)
+         MINIMALIST MONOCHROME BOTTOM SHEETS (In-Call Overlays)
          ========================================================= -->
     <div id="sheet-backdrop" class="sheet-backdrop hidden"></div>
 
-    <!-- Voice Options Sheet -->
     <div id="sheet-voices" class="bottom-sheet hidden">
-      <div class="sheet-handle"></div>
-      <div class="sheet-head">
-        <h3>🗣️ Yosa AI Ses Seçenekleri</h3>
-        <button type="button" class="sheet-close" data-close-sheet>×</button>
+      <div class="sheet-pill"></div>
+      <div class="sheet-header">
+        <h3>Ses Karakterleri</h3>
+        <button type="button" class="close-circle" data-close-sheet aria-label="Kapat">×</button>
       </div>
-      <div class="speed-selector-row">
-        <span class="speed-label">Konuşma Hızı:</span>
-        <div id="speed-pills" class="speed-pills"></div>
-      </div>
-      <div id="voices-list" class="option-list"></div>
+      <div id="modal-voices-list" class="studio-list"></div>
     </div>
 
-    <!-- Ringtone Options Sheet -->
-    <div id="sheet-ringtones" class="bottom-sheet hidden">
-      <div class="sheet-handle"></div>
-      <div class="sheet-head">
-        <h3>🔔 Gelen Arama Zil Sesi</h3>
-        <button type="button" class="sheet-close" data-close-sheet>×</button>
-      </div>
-      <div id="ringtones-list" class="option-list"></div>
-    </div>
-
-    <!-- In-Call Homework Overlay Sheet -->
     <div id="sheet-hw-overlay" class="bottom-sheet hidden">
-      <div class="sheet-handle"></div>
-      <div class="sheet-head">
-        <h3>📚 Kayıtlı Ödevlerim</h3>
-        <button type="button" class="sheet-close" data-close-sheet>×</button>
+      <div class="sheet-pill"></div>
+      <div class="sheet-header">
+        <h3>Kayıtlı Ödevlerim</h3>
+        <button type="button" class="close-circle" data-close-sheet aria-label="Kapat">×</button>
       </div>
-      <p class="sheet-sub">Görüşme sırasında "Matematik ödevimi kaydet..." diyerek yeni ödev ekleyebilirsin.</p>
-      <div id="overlay-hw-list" class="hw-list"></div>
+      <div id="overlay-hw-list" class="studio-list"></div>
     </div>
 
-    <!-- In-Call Google News Sources Sheet -->
     <div id="sheet-news-overlay" class="bottom-sheet hidden">
-      <div class="sheet-handle"></div>
-      <div class="sheet-head">
-        <h3>📰 Google News Kaynakları</h3>
-        <button type="button" class="sheet-close" data-close-sheet>×</button>
+      <div class="sheet-pill"></div>
+      <div class="sheet-header">
+        <h3>Google News Kaynakları</h3>
+        <button type="button" class="close-circle" data-close-sheet aria-label="Kapat">×</button>
       </div>
-      <div id="overlay-news-list" class="news-cards-list"></div>
+      <div id="overlay-news-list" class="studio-list"></div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="toast hidden"></div>
   </div>
 

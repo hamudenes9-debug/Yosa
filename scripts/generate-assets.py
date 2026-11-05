@@ -1,124 +1,69 @@
 #!/usr/bin/env python3
-"""Generates Yosa AI PNG app icons and 5 realistic polyphonic WAV ringtones."""
+"""Generates Yosa AI Monochrome Water-Droplet icons and 5 polyphonic WAV ringtones."""
 import math
 import os
 import shutil
 import struct
+import sys
 import wave
-import zlib
+
+# Allow Pillow installed in /tmp/py-pil if not in system site-packages
+if "/tmp/py-pil" not in sys.path and os.path.isdir("/tmp/py-pil"):
+    sys.path.insert(0, "/tmp/py-pil")
+
+from PIL import Image, ImageDraw, ImageChops
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def write_png(path: str, width: int, height: int, rgba_bytes: bytes) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+def ensure_master_droplet() -> Image.Image:
+    raw_path = os.path.join(ROOT, "public", "icons", "yosa-droplet-raw.png")
+    master_path = os.path.join(ROOT, "public", "icons", "yosa-droplet.png")
 
-    def chunk(tag: bytes, data: bytes) -> bytes:
-        return (
-            struct.pack("!I", len(data))
-            + tag
-            + data
-            + struct.pack("!I", zlib.crc32(tag + data) & 0xFFFFFFFF)
-        )
+    if os.path.exists(raw_path):
+        im = Image.open(raw_path).convert("RGB")
+        # Normalize near-black edge pixels (< 8) to pure #000000 so it blends invisibly on OLED black
+        lut = [0 if i < 9 else min(255, int((i - 9) * (255.0 / 246.0))) for i in range(256)]
+        im = im.point(lut * 3)
+        im_512 = im.resize((512, 512), Image.Resampling.LANCZOS)
+        os.makedirs(os.path.dirname(master_path), exist_ok=True)
+        im_512.save(master_path, format="PNG", optimize=True)
+        os.remove(raw_path)
+        return im_512
 
-    raw = bytearray()
-    stride = width * 4
-    for y in range(height):
-        raw.append(0)  # filter type 0
-        raw.extend(rgba_bytes[y * stride : (y + 1) * stride])
+    if os.path.exists(master_path):
+        return Image.open(master_path).convert("RGB")
 
-    ihdr = struct.pack("!IIBBBBB", width, height, 8, 6, 0, 0, 0)
-    png = (
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", ihdr)
-        + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
-        + chunk(b"IEND", b"")
+    raise FileNotFoundError("Missing public/icons/yosa-droplet.png")
+
+
+def make_squircle_launcher_icon(master: Image.Image, size: int) -> Image.Image:
+    # Render at 4x supersampling for razor-sharp anti-aliased squircle edges
+    ss = size * 4
+    canvas = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
+
+    art = master.resize((ss, ss), Image.Resampling.LANCZOS).convert("RGBA")
+
+    mask = Image.new("L", (ss, ss), 0)
+    draw_mask = ImageDraw.Draw(mask)
+    radius = int(ss * 0.225)
+    pad = max(2, int(ss * 0.01))
+    draw_mask.rounded_rectangle([pad, pad, ss - 1 - pad, ss - 1 - pad], radius=radius, fill=255)
+
+    canvas.paste(art, (0, 0), mask)
+
+    # Subtle brushed-silver hairline border right on the squircle edge
+    border_layer = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
+    draw_border = ImageDraw.Draw(border_layer)
+    stroke = max(3, int(ss * 0.01))
+    draw_border.rounded_rectangle(
+        [pad, pad, ss - 1 - pad, ss - 1 - pad],
+        radius=radius,
+        outline=(220, 224, 230, 58),
+        width=stroke,
     )
-    with open(path, "wb") as f:
-        f.write(png)
-
-
-def render_yosa_icon(size: int) -> bytes:
-    buf = bytearray(size * size * 4)
-    cx = (size - 1) / 2.0
-    cy = (size - 1) / 2.0
-    half = size / 2.0
-    corner_r = size * 0.23
-
-    for y in range(size):
-        ny = (y - cy) / half  # -1..1
-        for x in range(size):
-            nx = (x - cx) / half  # -1..1
-
-            # Rounded squircle signed distance
-            qx = max(abs(x - cx) - (half - corner_r), 0.0)
-            qy = max(abs(y - cy) - (half - corner_r), 0.0)
-            dist_edge = math.hypot(qx, qy) - corner_r
-
-            if dist_edge > 0.7:
-                continue
-            alpha = 1.0 if dist_edge < -0.7 else max(0.0, min(1.0, 0.5 - dist_edge / 1.4))
-
-            # Deep midnight navy -> emerald/cyan radial glow background
-            r_norm = math.hypot(nx, ny)
-            glow = math.exp(-2.6 * (r_norm ** 2))
-            bg_r = 10 + 14 * glow
-            bg_g = 18 + 65 * glow
-            bg_b = 34 + 82 * glow
-
-            # Outer glowing call ring
-            ring_dist = abs(r_norm - 0.68)
-            ring_alpha = math.exp(-((ring_dist / 0.045) ** 2))
-            # Gradient from emerald (#10b981) to cyan (#06b6d4)
-            grad_t = (nx + ny + 2.0) / 4.0
-            ac_r = 16 * (1 - grad_t) + 6 * grad_t
-            ac_g = 185 * (1 - grad_t) + 182 * grad_t
-            ac_b = 129 * (1 - grad_t) + 212 * grad_t
-
-            r = bg_r * (1 - 0.85 * ring_alpha) + ac_r * (0.85 * ring_alpha)
-            g = bg_g * (1 - 0.85 * ring_alpha) + ac_g * (0.85 * ring_alpha)
-            b = bg_b * (1 - 0.85 * ring_alpha) + ac_b * (0.85 * ring_alpha)
-
-            # Second subtle pulse ring
-            ring2_dist = abs(r_norm - 0.82)
-            ring2_alpha = 0.35 * math.exp(-((ring2_dist / 0.025) ** 2))
-            r = r * (1 - ring2_alpha) + ac_r * ring2_alpha
-            g = g * (1 - ring2_alpha) + ac_g * ring2_alpha
-            b = b * (1 - ring2_alpha) + ac_b * ring2_alpha
-
-            # Center stylized 5-bar AI voice equalizer capsules
-            bars = [
-                (-0.34, 0.16),
-                (-0.17, 0.30),
-                (0.00, 0.42),
-                (0.17, 0.28),
-                (0.34, 0.16),
-            ]
-            bar_half_w = 0.048
-            bar_hit = 0.0
-            for bx, bh in bars:
-                dx = abs(nx - bx)
-                dy = max(abs(ny) - bh, 0.0)
-                d_capsule = math.hypot(dx, dy) - bar_half_w
-                if d_capsule < 0.03:
-                    bar_hit = max(bar_hit, max(0.0, min(1.0, (0.02 - d_capsule) / 0.035)))
-
-            if bar_hit > 0:
-                # Crisp white-mint core for voice bars
-                br = 235 * (1 - 0.25 * grad_t) + 160 * (0.25 * grad_t)
-                bg2 = 255
-                bb = 248
-                r = r * (1 - bar_hit) + br * bar_hit
-                g = g * (1 - bar_hit) + bg2 * bar_hit
-                b = b * (1 - bar_hit) + bb * bar_hit
-
-            idx = (y * size + x) * 4
-            buf[idx] = max(0, min(255, int(r)))
-            buf[idx + 1] = max(0, min(255, int(g)))
-            buf[idx + 2] = max(0, min(255, int(b)))
-            buf[idx + 3] = max(0, min(255, int(alpha * 255)))
-
-    return bytes(buf)
+    canvas = Image.alpha_composite(canvas, border_layer)
+    return canvas.resize((size, size), Image.Resampling.LANCZOS)
 
 
 def write_wav(path: str, samples: list[float], sample_rate: int = 22050) -> None:
@@ -158,7 +103,7 @@ def synth_note(freq: float, dur: float, sr: int, kind: str = "marimba", vol: flo
             attack = min(1.0, t / 0.025)
             env = attack * math.exp(-2.8 * t)
             val = math.sin(2 * math.pi * freq * t) + 0.2 * math.sin(2 * math.pi * freq * 2 * t)
-        else:  # pulse
+        else:
             env = attack * math.exp(-6.5 * t)
             val = (
                 0.7 * math.sin(2 * math.pi * freq * t)
@@ -184,26 +129,22 @@ def build_ringtones() -> dict[str, list[float]]:
     sr = 22050
     tones: dict[str, list[float]] = {}
 
-    # 1. Yosa Imza (Warm Smartphone Marimba Arpeggio)
     events_yosa = [
-        (0.00, 523.25, 0.45, "marimba", 0.48),  # C5
-        (0.18, 659.25, 0.45, "marimba", 0.48),  # E5
-        (0.36, 783.99, 0.45, "marimba", 0.50),  # G5
-        (0.54, 987.77, 0.55, "marimba", 0.52),  # B5
-        (0.82, 783.99, 0.40, "marimba", 0.42),  # G5
-        (1.00, 1046.50, 0.85, "marimba", 0.56), # C6
-        # Soft bass root
+        (0.00, 523.25, 0.45, "marimba", 0.48),
+        (0.18, 659.25, 0.45, "marimba", 0.48),
+        (0.36, 783.99, 0.45, "marimba", 0.50),
+        (0.54, 987.77, 0.55, "marimba", 0.52),
+        (0.82, 783.99, 0.40, "marimba", 0.42),
+        (1.00, 1046.50, 0.85, "marimba", 0.56),
         (0.00, 261.63, 0.90, "soft", 0.25),
         (1.00, 349.23, 0.90, "soft", 0.25),
     ]
     tones["ring_yosa"] = mix_events(2.8, events_yosa, sr)
 
-    # 2. Klasik Ahize Zili (Realistic Dual-Frequency 440+480Hz modulated at 20Hz)
     dur_phone = 3.2
     buf_phone = [0.0] * int(dur_phone * sr)
     for i in range(len(buf_phone)):
         t = i / sr
-        # Two bursts: 0.0..0.75 and 1.05..1.80, then pause
         in_burst = (0.0 <= t <= 0.75) or (1.05 <= t <= 1.80)
         if in_burst:
             mod = 0.55 + 0.45 * math.sin(2 * math.pi * 20.0 * t)
@@ -215,28 +156,25 @@ def build_ringtones() -> dict[str, list[float]]:
             buf_phone[i] = carrier * mod * 0.52
     tones["ring_phone"] = buf_phone
 
-    # 3. Kristal Melodi (Bright Bell Chimes)
     events_crystal = [
-        (0.00, 880.00, 0.70, "crystal", 0.40),  # A5
-        (0.24, 1108.73, 0.70, "crystal", 0.40), # C#6
-        (0.48, 1318.51, 0.75, "crystal", 0.42), # E6
-        (0.72, 1760.00, 0.95, "crystal", 0.44), # A6
-        (1.20, 1318.51, 0.65, "crystal", 0.36), # E6
-        (1.46, 1479.98, 0.95, "crystal", 0.42), # F#6
+        (0.00, 880.00, 0.70, "crystal", 0.40),
+        (0.24, 1108.73, 0.70, "crystal", 0.40),
+        (0.48, 1318.51, 0.75, "crystal", 0.42),
+        (0.72, 1760.00, 0.95, "crystal", 0.44),
+        (1.20, 1318.51, 0.65, "crystal", 0.36),
+        (1.46, 1479.98, 0.95, "crystal", 0.42),
     ]
     tones["ring_crystal"] = mix_events(3.0, events_crystal, sr)
 
-    # 4. Gece Ritmi (Calm Warm Evening Chord Melody)
     events_night = [
-        (0.00, 392.00, 0.90, "soft", 0.42),     # G4
-        (0.30, 493.88, 0.90, "soft", 0.40),     # B4
-        (0.60, 587.33, 0.95, "soft", 0.42),     # D5
-        (0.95, 739.99, 1.15, "soft", 0.44),     # F#5
-        (1.45, 659.25, 1.10, "soft", 0.40),     # E5
+        (0.00, 392.00, 0.90, "soft", 0.42),
+        (0.30, 493.88, 0.90, "soft", 0.40),
+        (0.60, 587.33, 0.95, "soft", 0.42),
+        (0.95, 739.99, 1.15, "soft", 0.44),
+        (1.45, 659.25, 1.10, "soft", 0.40),
     ]
     tones["ring_night"] = mix_events(3.1, events_night, sr)
 
-    # 5. Dijital Nabiz (Modern AI Call Pulse)
     events_pulse = [
         (0.00, 587.33, 0.22, "pulse", 0.48),
         (0.16, 587.33, 0.22, "pulse", 0.48),
@@ -251,7 +189,8 @@ def build_ringtones() -> dict[str, list[float]]:
 
 
 def main() -> None:
-    # 1. Icons
+    master = ensure_master_droplet()
+
     densities = {
         "drawable-mdpi": 48,
         "drawable-hdpi": 72,
@@ -260,13 +199,13 @@ def main() -> None:
         "drawable-xxxhdpi": 192,
     }
     for folder, px in densities.items():
-        icon_bytes = render_yosa_icon(px)
-        write_png(os.path.join(ROOT, "android", "res", folder, "ic_launcher.png"), px, px, icon_bytes)
+        out_p = os.path.join(ROOT, "android", "res", folder, "ic_launcher.png")
+        os.makedirs(os.path.dirname(out_p), exist_ok=True)
+        make_squircle_launcher_icon(master, px).save(out_p, format="PNG", optimize=True)
 
-    web_icon = render_yosa_icon(256)
-    write_png(os.path.join(ROOT, "public", "icons", "yosa-icon.png"), 256, 256, web_icon)
+    web_icon_path = os.path.join(ROOT, "public", "icons", "yosa-icon.png")
+    make_squircle_launcher_icon(master, 256).save(web_icon_path, format="PNG", optimize=True)
 
-    # 2. Ringtones
     tones = build_ringtones()
     for name, samples in tones.items():
         pub_path = os.path.join(ROOT, "public", "ringtones", f"{name}.wav")
@@ -275,7 +214,7 @@ def main() -> None:
         os.makedirs(os.path.dirname(raw_path), exist_ok=True)
         shutil.copy2(pub_path, raw_path)
 
-    print("Generated Yosa AI icons and 5 ringtones successfully.")
+    print("Generated monochrome water-droplet icons and 5 ringtones successfully.")
 
 
 if __name__ == "__main__":

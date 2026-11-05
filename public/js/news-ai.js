@@ -268,27 +268,27 @@
   // =========================================================================
 
   const SUBJECT_MAP = [
-    { keys: ["matematik", "mat "], name: "Matematik", icon: "📐", color: "#3b82f6" },
-    { keys: ["geometri"], name: "Geometri", icon: "📏", color: "#6366f1" },
-    { keys: ["fizik"], name: "Fizik", icon: "⚡", color: "#f59e0b" },
-    { keys: ["kimya"], name: "Kimya", icon: "🧪", color: "#10b981" },
-    { keys: ["biyoloji"], name: "Biyoloji", icon: "🧬", color: "#22c55e" },
-    { keys: ["fen bilimleri", "fen "], name: "Fen Bilimleri", icon: "🔬", color: "#14b8a6" },
-    { keys: ["türkçe", "turkce", "kompozisyon", "dil bilgisi"], name: "Türkçe", icon: "📖", color: "#ec4899" },
-    { keys: ["edebiyat", "roman", "şiir"], name: "Edebiyat", icon: "✒️", color: "#d946ef" },
-    { keys: ["tarih", "inkılap"], name: "Tarih", icon: "🏛️", color: "#eab308" },
-    { keys: ["coğrafya", "cografya"], name: "Coğrafya", icon: "🌍", color: "#06b6d4" },
-    { keys: ["ingilizce", "english"], name: "İngilizce", icon: "🗣️", color: "#8b5cf6" },
-    { keys: ["almanca"], name: "Almanca", icon: "🇩🇪", color: "#f97316" },
-    { keys: ["felsefe"], name: "Felsefe", icon: "💭", color: "#a855f7" },
-    { keys: ["din kültürü", "din "], name: "Din Kültürü", icon: "🌙", color: "#10b981" },
-    { keys: ["sosyal bilgiler", "sosyal"], name: "Sosyal Bilgiler", icon: "🧭", color: "#0ea5e9" },
-    { keys: ["bilişim", "kodlama", "yazılım", "bilgisayar"], name: "Bilişim & Kodlama", icon: "💻", color: "#06b6d4" }
+    { keys: ["matematik", "mat "], name: "Matematik", code: "MAT" },
+    { keys: ["geometri"], name: "Geometri", code: "GEO" },
+    { keys: ["fizik"], name: "Fizik", code: "FİZ" },
+    { keys: ["kimya"], name: "Kimya", code: "KİM" },
+    { keys: ["biyoloji"], name: "Biyoloji", code: "BİY" },
+    { keys: ["fen bilimleri", "fen "], name: "Fen Bilimleri", code: "FEN" },
+    { keys: ["türkçe", "turkce", "kompozisyon", "dil bilgisi"], name: "Türkçe", code: "TRK" },
+    { keys: ["edebiyat", "roman", "şiir"], name: "Edebiyat", code: "EDB" },
+    { keys: ["tarih", "inkılap"], name: "Tarih", code: "TAR" },
+    { keys: ["coğrafya", "cografya"], name: "Coğrafya", code: "COĞ" },
+    { keys: ["ingilizce", "english"], name: "İngilizce", code: "İNG" },
+    { keys: ["almanca"], name: "Almanca", code: "ALM" },
+    { keys: ["felsefe"], name: "Felsefe", code: "FEL" },
+    { keys: ["din kültürü", "din "], name: "Din Kültürü", code: "DİN" },
+    { keys: ["sosyal bilgiler", "sosyal"], name: "Sosyal Bilgiler", code: "SOS" },
+    { keys: ["bilişim", "kodlama", "yazılım", "bilgisayar"], name: "Bilişim", code: "KOD" }
   ];
 
   function extractHomeworkDetails(rawText) {
     const lower = " " + rawText.toLocaleLowerCase("tr-TR") + " ";
-    let matchedSubject = { name: "Genel Ödev", icon: "📚", color: "#10b981" };
+    let matchedSubject = { name: "Genel Ödev", code: "ÖDV" };
     for (const s of SUBJECT_MAP) {
       if (s.keys.some((k) => lower.includes(k))) {
         matchedSubject = s;
@@ -333,8 +333,7 @@
 
     return {
       subject: matchedSubject.name,
-      icon: matchedSubject.icon,
-      color: matchedSubject.color,
+      code: matchedSubject.code,
       due,
       task
     };

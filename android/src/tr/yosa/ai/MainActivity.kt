@@ -48,7 +48,7 @@ class MainActivity : Activity() {
         requestRuntimePermissionsIfNeeded()
 
         webView = WebView(this)
-        webView.setBackgroundColor(Color.parseColor("#070D19"))
+        webView.setBackgroundColor(Color.BLACK)
         setContentView(webView)
 
         val settings: WebSettings = webView.settings

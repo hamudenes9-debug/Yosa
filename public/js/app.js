@@ -1,14 +1,27 @@
-// Yosa AI — Complete Zero-Keyboard Phone Call, Google News & Homework Controller
+// Yosa AI — Liquid Monochrome Telephony, Google News & Homework Controller
 (function () {
   const STORAGE_KEY = "yosa_ai_state_v1";
+
+  const SVG_PLAY =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+  const SVG_STOP =
+    '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>';
+  const SVG_CHECK =
+    '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVG_SPEAKER =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  const SVG_TRASH =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
+  const SVG_BELL =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
 
   const state = {
     voiceId: "elif",
     speedId: "normal",
     ringtoneId: "ring_yosa",
     homeworks: [],
-    callState: "idle", // idle | incoming | dialing | active
-    callReason: "Sesli Asistan Araması",
+    callState: "idle",
+    callReason: "Sesli Asistan",
     callStartPrompt: null,
     callSeconds: 0,
     isMuted: false,
@@ -17,7 +30,7 @@
     lastArticles: [],
     scheduledAt: null,
     scheduledReason: "",
-    activeHubMicMode: null // null | "general" | "homework" | "schedule"
+    activeTab: "assistant"
   };
 
   let callTimerInterval = null;
@@ -25,7 +38,6 @@
   let toastTimer = null;
   let dialTimeout = null;
 
-  // DOM Elements
   const el = {
     screenHub: document.getElementById("screen-hub"),
     screenIncoming: document.getElementById("screen-incoming"),
@@ -33,9 +45,7 @@
     btnDownloadApk: document.getElementById("btn-download-apk"),
 
     labelCurrentVoice: document.getElementById("label-current-voice"),
-    labelCurrentRingtone: document.getElementById("label-current-ringtone"),
-    tileVoiceSub: document.getElementById("tile-voice-sub"),
-    tileRingSub: document.getElementById("tile-ring-sub"),
+    chipOpenVoices: document.getElementById("chip-open-voices"),
 
     btnIncomingNow: document.getElementById("btn-incoming-now"),
     btnOutboundCall: document.getElementById("btn-outbound-call"),
@@ -53,6 +63,7 @@
     hwList: document.getElementById("hw-list"),
     overlayHwList: document.getElementById("overlay-hw-list"),
     btnVoiceAddHw: document.getElementById("btn-voice-add-hw"),
+    labelAddHw: document.getElementById("label-add-hw"),
     btnReadAllHw: document.getElementById("btn-read-all-hw"),
     btnVoiceSchedule: document.getElementById("btn-voice-schedule"),
 
@@ -73,7 +84,6 @@
     btnCallPushToTalk: document.getElementById("btn-call-pushtotalk"),
     labelPushToTalk: document.getElementById("label-pushtotalk"),
     btnCallMute: document.getElementById("btn-call-mute"),
-    icoMute: document.getElementById("ico-mute"),
     labelMute: document.getElementById("label-mute"),
     btnCallSpeaker: document.getElementById("btn-call-speaker"),
     btnCallVoice: document.getElementById("btn-call-voice"),
@@ -83,10 +93,11 @@
 
     sheetBackdrop: document.getElementById("sheet-backdrop"),
     sheetVoices: document.getElementById("sheet-voices"),
-    sheetRingtones: document.getElementById("sheet-ringtones"),
     sheetHwOverlay: document.getElementById("sheet-hw-overlay"),
     sheetNewsOverlay: document.getElementById("sheet-news-overlay"),
+
     voicesList: document.getElementById("voices-list"),
+    modalVoicesList: document.getElementById("modal-voices-list"),
     speedPills: document.getElementById("speed-pills"),
     ringtonesList: document.getElementById("ringtones-list"),
     overlayNewsList: document.getElementById("overlay-news-list"),
@@ -95,7 +106,7 @@
   };
 
   // =========================================================
-  // Persistence (LocalStorage + Native Android SharedPreferences)
+  // Persistence
   // =========================================================
   function loadPersistedState() {
     let raw = null;
@@ -144,7 +155,7 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
       el.toast.classList.add("hidden");
-    }, 3000);
+    }, 2600);
   }
 
   function formatMMSS(totalSec) {
@@ -155,12 +166,22 @@
   }
 
   // =========================================================
-  // Screen & Sheet Navigation
+  // Navigation (Screens, Tabs, Subviews, Sheets)
   // =========================================================
   function showScreen(name) {
     el.screenHub.classList.toggle("active", name === "hub");
     el.screenIncoming.classList.toggle("active", name === "incoming");
     el.screenIncall.classList.toggle("active", name === "incall");
+  }
+
+  function switchTab(tabId) {
+    state.activeTab = tabId;
+    document.querySelectorAll(".nav-item[data-tab]").forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
+    });
+    document.getElementById("tab-assistant").classList.toggle("active", tabId === "assistant");
+    document.getElementById("tab-tasks").classList.toggle("active", tabId === "tasks");
+    document.getElementById("tab-audio").classList.toggle("active", tabId === "audio");
   }
 
   function openSheet(sheetEl) {
@@ -171,114 +192,126 @@
 
   function closeAllSheets() {
     el.sheetBackdrop.classList.add("hidden");
-    [el.sheetVoices, el.sheetRingtones, el.sheetHwOverlay, el.sheetNewsOverlay].forEach((s) =>
+    [el.sheetVoices, el.sheetHwOverlay, el.sheetNewsOverlay].forEach((s) =>
       s.classList.add("hidden")
     );
   }
 
   // =========================================================
-  // Render Preferences, Voices, Ringtones & Homeworks
+  // Studio Renderers (Voices, Ringtones, Homeworks, News)
   // =========================================================
   function renderPrefsLabels() {
     const voice = YosaSpeech.getVoiceProfile(state.voiceId);
-    const ring =
-      YosaRingtones.RINGTONES.find((r) => r.id === state.ringtoneId) ||
-      YosaRingtones.RINGTONES[0];
-
     el.labelCurrentVoice.textContent = voice.name;
-    el.labelCurrentRingtone.textContent = ring.name.replace(" Zili", "");
-    el.tileVoiceSub.textContent = `Aktif: ${voice.name} (${voice.role.split(" ")[0]})`;
-    el.tileRingSub.textContent = `Aktif: ${ring.name}`;
-    el.incallVoiceBadge.textContent = `Ses: ${voice.name}`;
+    el.incallVoiceBadge.textContent = `HD • ${voice.name}`;
   }
 
-  function renderVoicesSheet() {
+  function renderVoicesInto(container) {
+    if (!container) return;
+    container.innerHTML = "";
+    for (const v of YosaSpeech.VOICES) {
+      const selected = state.voiceId === v.id;
+      const row = document.createElement("div");
+      row.className = "studio-item" + (selected ? " selected" : "");
+
+      const mono = document.createElement("div");
+      mono.className = "monogram";
+      mono.textContent = v.name.charAt(0);
+
+      const mainBtn = document.createElement("button");
+      mainBtn.type = "button";
+      mainBtn.className = "studio-main";
+      mainBtn.innerHTML = `<strong>${v.name}</strong><span>${v.role}</span>`;
+      mainBtn.onclick = () => {
+        state.voiceId = v.id;
+        savePersistedState();
+        renderPrefsLabels();
+        renderAudioStudio();
+        showToast(`Ses karakteri: ${v.name}`);
+      };
+
+      const prevBtn = document.createElement("button");
+      prevBtn.type = "button";
+      prevBtn.className = "play-circle-btn";
+      prevBtn.innerHTML = SVG_PLAY;
+      prevBtn.title = "Sesini Dinle";
+      prevBtn.onclick = (e) => {
+        e.stopPropagation();
+        YosaRingtones.ensureContext();
+        prevBtn.innerHTML = SVG_STOP;
+        YosaSpeech.speak(v.sample, {
+          voiceId: v.id,
+          speedId: state.speedId,
+          onEnd: () => {
+            prevBtn.innerHTML = SVG_PLAY;
+          }
+        });
+      };
+
+      row.onclick = () => mainBtn.click();
+      row.appendChild(mono);
+      row.appendChild(mainBtn);
+      row.appendChild(prevBtn);
+      container.appendChild(row);
+    }
+  }
+
+  function renderAudioStudio() {
     el.speedPills.innerHTML = "";
     for (const sp of YosaSpeech.SPEED_PRESETS) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "speed-pill" + (state.speedId === sp.id ? " active" : "");
+      btn.className = "speed-chip" + (state.speedId === sp.id ? " active" : "");
       btn.textContent = sp.label;
       btn.onclick = () => {
         state.speedId = sp.id;
         savePersistedState();
-        renderVoicesSheet();
+        renderAudioStudio();
         showToast(`Konuşma hızı: ${sp.label}`);
       };
       el.speedPills.appendChild(btn);
     }
 
-    el.voicesList.innerHTML = "";
-    for (const v of YosaSpeech.VOICES) {
-      const row = document.createElement("div");
-      row.className = "option-item" + (state.voiceId === v.id ? " selected" : "");
+    renderVoicesInto(el.voicesList);
+    renderVoicesInto(el.modalVoicesList);
 
-      const mainBtn = document.createElement("button");
-      mainBtn.type = "button";
-      mainBtn.className = "opt-main";
-      mainBtn.innerHTML = `<strong>${v.name} ${state.voiceId === v.id ? "✓" : ""}</strong><span>${v.role}</span>`;
-      mainBtn.onclick = () => {
-        state.voiceId = v.id;
-        savePersistedState();
-        renderPrefsLabels();
-        renderVoicesSheet();
-        showToast(`${v.name} sesi seçildi`);
-      };
-
-      const prevBtn = document.createElement("button");
-      prevBtn.type = "button";
-      prevBtn.className = "preview-btn";
-      prevBtn.textContent = "▶ Dinle";
-      prevBtn.onclick = (e) => {
-        e.stopPropagation();
-        YosaRingtones.ensureContext();
-        prevBtn.textContent = "🔊 Konuşuyor";
-        YosaSpeech.speak(v.sample, {
-          voiceId: v.id,
-          speedId: state.speedId,
-          onEnd: () => {
-            prevBtn.textContent = "▶ Dinle";
-          }
-        });
-      };
-
-      row.appendChild(mainBtn);
-      row.appendChild(prevBtn);
-      el.voicesList.appendChild(row);
-    }
-  }
-
-  function renderRingtonesSheet() {
     el.ringtonesList.innerHTML = "";
     for (const r of YosaRingtones.RINGTONES) {
+      const selected = state.ringtoneId === r.id;
       const row = document.createElement("div");
-      row.className = "option-item" + (state.ringtoneId === r.id ? " selected" : "");
+      row.className = "studio-item" + (selected ? " selected" : "");
+
+      const mono = document.createElement("div");
+      mono.className = "monogram";
+      mono.innerHTML = SVG_BELL;
 
       const mainBtn = document.createElement("button");
       mainBtn.type = "button";
-      mainBtn.className = "opt-main";
-      mainBtn.innerHTML = `<strong>${r.name} ${state.ringtoneId === r.id ? "✓" : ""}</strong><span>${r.subtitle}</span>`;
+      mainBtn.className = "studio-main";
+      mainBtn.innerHTML = `<strong>${r.name}</strong><span>${r.subtitle}</span>`;
       mainBtn.onclick = () => {
         state.ringtoneId = r.id;
         savePersistedState();
-        renderPrefsLabels();
-        renderRingtonesSheet();
+        renderAudioStudio();
         showToast(`Zil sesi: ${r.name}`);
       };
 
       const prevBtn = document.createElement("button");
       prevBtn.type = "button";
-      prevBtn.className = "preview-btn";
-      prevBtn.textContent = "🔔 Çaldır";
+      prevBtn.className = "play-circle-btn";
+      prevBtn.innerHTML = SVG_PLAY;
+      prevBtn.title = "Zili Dinle";
       prevBtn.onclick = (e) => {
         e.stopPropagation();
         YosaRingtones.ensureContext();
-        prevBtn.textContent = "⏹ Durdur";
+        prevBtn.innerHTML = SVG_STOP;
         YosaRingtones.previewRingtone(r.id, () => {
-          prevBtn.textContent = "🔔 Çaldır";
+          prevBtn.innerHTML = SVG_PLAY;
         });
       };
 
+      row.onclick = () => mainBtn.click();
+      row.appendChild(mono);
       row.appendChild(mainBtn);
       row.appendChild(prevBtn);
       el.ringtonesList.appendChild(row);
@@ -289,8 +322,6 @@
     const entry = {
       id: "hw_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
       subject: hw.subject || "Genel Ödev",
-      icon: hw.icon || "📚",
-      color: hw.color || "#10b981",
       due: hw.due || "Yakında",
       task: hw.task || "Ödev çalışması",
       completed: false,
@@ -311,59 +342,59 @@
       container.innerHTML = "";
       if (state.homeworks.length === 0) {
         const empty = document.createElement("div");
-        empty.className = "hw-empty";
+        empty.className = "empty-state";
         empty.innerHTML =
-          'Henüz kayıtlı ödev yok.<br/><strong>"Matematik ödevimi kaydet Cuma gününe sayfa 48"</strong> gibi sesle söyleyebilirsin.';
+          '<strong>Henüz kayıtlı ödev yok</strong>"Matematik ödevimi kaydet Cuma gününe sayfa 48" diyerek sesle ekleyebilirsin.';
         container.appendChild(empty);
         return;
       }
 
       for (const item of state.homeworks) {
-        const card = document.createElement("div");
-        card.className = "hw-card" + (item.completed ? " done" : "");
+        const row = document.createElement("div");
+        row.className = "hw-row" + (item.completed ? " done" : "");
 
         const checkBtn = document.createElement("button");
         checkBtn.type = "button";
-        checkBtn.className = "hw-check-btn";
-        checkBtn.textContent = item.completed ? "✓" : "";
+        checkBtn.className = "hw-check";
+        checkBtn.innerHTML = item.completed ? SVG_CHECK : "";
         checkBtn.onclick = () => {
           item.completed = !item.completed;
           savePersistedState();
           renderHomeworkLists();
-          showToast(item.completed ? "Ödev tamamlandı! 🎉" : "Ödev bekleyenlere alındı");
+          showToast(item.completed ? "Ödev tamamlandı" : "Bekleyenlere alındı");
         };
 
-        const body = document.createElement("div");
-        body.className = "hw-body";
-        body.innerHTML = `
-          <div class="hw-top-row">
-            <span class="hw-subj">${item.icon || "📚"} ${item.subject}</span>
-            <span class="hw-due">${item.due}</span>
+        const content = document.createElement("div");
+        content.className = "hw-content";
+        content.innerHTML = `
+          <div class="hw-meta-line">
+            <span class="hw-subject-tag"></span>
+            <span class="hw-due-tag"></span>
           </div>
-          <div class="hw-task"></div>
+          <div class="hw-title"></div>
         `;
-        body.querySelector(".hw-task").textContent = item.task;
+        content.querySelector(".hw-subject-tag").textContent = item.subject;
+        content.querySelector(".hw-due-tag").textContent = item.due;
+        content.querySelector(".hw-title").textContent = item.task;
 
-        const actions = document.createElement("div");
-        actions.className = "hw-actions";
+        const btns = document.createElement("div");
+        btns.className = "hw-row-btns";
 
         const readBtn = document.createElement("button");
         readBtn.type = "button";
-        readBtn.className = "hw-icon-btn";
-        readBtn.textContent = "🔊";
-        readBtn.title = "Sesli Oku";
+        readBtn.className = "subtle-ico-btn";
+        readBtn.innerHTML = SVG_SPEAKER;
         readBtn.onclick = () => {
           YosaSpeech.speak(
-            `${item.subject} ödevin, teslim zamanı ${item.due}. Konu: ${item.task}`,
+            `${item.subject} ödevin, teslim ${item.due}. Konu: ${item.task}`,
             { voiceId: state.voiceId, speedId: state.speedId }
           );
         };
 
         const delBtn = document.createElement("button");
         delBtn.type = "button";
-        delBtn.className = "hw-icon-btn";
-        delBtn.textContent = "🗑️";
-        delBtn.title = "Sil";
+        delBtn.className = "subtle-ico-btn";
+        delBtn.innerHTML = SVG_TRASH;
         delBtn.onclick = () => {
           state.homeworks = state.homeworks.filter((h) => h.id !== item.id);
           savePersistedState();
@@ -371,13 +402,13 @@
           showToast("Ödev silindi");
         };
 
-        actions.appendChild(readBtn);
-        actions.appendChild(delBtn);
+        btns.appendChild(readBtn);
+        btns.appendChild(delBtn);
 
-        card.appendChild(checkBtn);
-        card.appendChild(body);
-        card.appendChild(actions);
-        container.appendChild(card);
+        row.appendChild(checkBtn);
+        row.appendChild(content);
+        row.appendChild(btns);
+        container.appendChild(row);
       }
     };
 
@@ -390,7 +421,7 @@
     if (!articles || articles.length === 0) {
       el.incallNewsStrip.classList.add("hidden");
       el.overlayNewsList.innerHTML =
-        '<div class="hw-empty">Henüz haber sorgulanmadı. Arama sırasında "Galatasaray maçını özetle" veya "Gündemde ne var?" diye sorabilirsin.</div>';
+        '<div class="empty-state"><strong>Henüz haber taranmadı</strong>Görüşme sırasında "Galatasaray maçını özetle" veya "Gündemde ne var?" diye sorabilirsin.</div>';
       return;
     }
 
@@ -399,8 +430,8 @@
     for (const art of articles.slice(0, 5)) {
       const chip = document.createElement("button");
       chip.type = "button";
-      chip.className = "news-mini-badge";
-      chip.textContent = `📰 ${art.source}: ${art.title}`;
+      chip.className = "news-source-chip";
+      chip.textContent = `${art.source} • ${art.title}`;
       chip.onclick = () => openSheet(el.sheetNewsOverlay);
       el.incallNewsStrip.appendChild(chip);
     }
@@ -408,12 +439,12 @@
     el.overlayNewsList.innerHTML = "";
     for (const art of articles) {
       const div = document.createElement("div");
-      div.className = "news-card-item";
+      div.className = "news-row-card";
       const src = document.createElement("div");
-      src.className = "news-card-source";
+      src.className = "news-row-src";
       src.textContent = art.source;
       const ttl = document.createElement("div");
-      ttl.className = "news-card-title";
+      ttl.className = "news-row-ttl";
       ttl.textContent = art.title;
       div.appendChild(src);
       div.appendChild(ttl);
@@ -428,9 +459,8 @@
     cancelScheduledCall(false);
     const delaySec = Math.max(3, Math.round(seconds));
     state.scheduledAt = Date.now() + delaySec * 1000;
-    state.scheduledReason = reason || "Zamanlı Yosa AI Araması";
+    state.scheduledReason = reason || "Zamanlı Yosa Araması";
 
-    // Also register Native Android AlarmManager wake trigger if inside APK
     if (window.YosaNative && typeof window.YosaNative.scheduleCall === "function") {
       try {
         window.YosaNative.scheduleCall(delaySec, state.scheduledReason);
@@ -453,13 +483,15 @@
       updateScheduleBanner();
     }, 500);
 
-    showToast(`⏰ ${delaySec < 60 ? delaySec + " sn" : Math.round(delaySec / 60) + " dk"} sonra Yosa seni arayacak!`);
+    showToast(
+      `${delaySec < 60 ? delaySec + " sn" : Math.round(delaySec / 60) + " dk"} sonra Yosa seni arayacak`
+    );
   }
 
   function updateScheduleBanner() {
     if (!state.scheduledAt) return;
     const remSec = Math.max(0, Math.ceil((state.scheduledAt - Date.now()) / 1000));
-    el.schedCountdownText.textContent = `${formatMMSS(remSec)} sonra Yosa AI seni arayacak`;
+    el.schedCountdownText.textContent = formatMMSS(remSec);
     el.schedReasonText.textContent = state.scheduledReason;
   }
 
@@ -478,28 +510,27 @@
     if (notify) showToast("Zamanlı arama iptal edildi");
   }
 
-  // Exposed for Native Android CallAlarmReceiver wakeup
   window.__yosaTriggerIncomingCall = function (reason) {
     cancelScheduledCall(false);
     if (state.callState === "idle") {
-      triggerIncomingCall(reason || "Zamanlı Yosa AI Araması");
+      triggerIncomingCall(reason || "Zamanlı Yosa Araması");
     }
   };
 
   // =========================================================
-  // Realistic Telephony State Machine (Incoming / Outbound / Active)
+  // Telephony State Machine
   // =========================================================
   function setVisualizerMode(mode, labelText) {
-    el.voiceVisualizer.className = "voice-visualizer " + mode;
+    el.voiceVisualizer.className = "incall-droplet-orb " + mode;
     if (labelText) el.incallStateLabel.textContent = labelText;
   }
 
   function setCaption(speaker, text) {
-    el.captionSpeaker.textContent = speaker;
+    el.captionSpeaker.textContent = speaker.toLocaleUpperCase("tr-TR");
     el.captionText.textContent = text;
   }
 
-  function triggerIncomingCall(reason = "Sesli Asistan Araması", autoPrompt = null) {
+  function triggerIncomingCall(reason = "Sesli Asistan", autoPrompt = null) {
     YosaSpeech.stopSpeaking();
     YosaSpeech.stopListening();
     closeAllSheets();
@@ -514,7 +545,7 @@
       YosaRingtones.RINGTONES[0];
 
     el.incomingReason.textContent = reason;
-    el.incomingVoicePill.textContent = `Ses: ${voice.name} • ${ring.name}`;
+    el.incomingVoicePill.textContent = `${voice.name} • ${ring.name.replace(" Zili", "")}`;
 
     showScreen("incoming");
     YosaRingtones.startRingtone(state.ringtoneId, true);
@@ -527,7 +558,7 @@
     closeAllSheets();
 
     state.callState = "dialing";
-    state.callReason = "Giden Sesli Arama";
+    state.callReason = "Giden Arama";
     state.callStartPrompt = initialUserQuestion;
     state.callSeconds = 0;
     state.history = [];
@@ -535,8 +566,8 @@
     renderPrefsLabels();
 
     el.incallTimer.textContent = "Aranıyor...";
-    setVisualizerMode("thinking", "Çalıyor...");
-    setCaption("Telefon", "Yosa AI aranıyor...");
+    setVisualizerMode("thinking", "Çalıyor");
+    setCaption("ARAMA", "Yosa AI aranıyor...");
     showScreen("incall");
 
     YosaRingtones.startDialbackTone();
@@ -546,7 +577,7 @@
       if (state.callState !== "dialing") return;
       YosaRingtones.stopDialbackTone();
       enterActiveCall();
-    }, 1850);
+    }, 1750);
   }
 
   function answerIncomingCall() {
@@ -571,7 +602,6 @@
       el.incallTimer.textContent = formatMMSS(state.callSeconds);
     }, 1000);
 
-    // If launched from a quick topic chip ("Galatasaray maçını özetle"), answer it right after a quick "Alo!"
     if (state.callStartPrompt) {
       const q = state.callStartPrompt;
       state.callStartPrompt = null;
@@ -579,13 +609,15 @@
       return;
     }
 
-    // Contextual proactive greeting based on why Yosa called
     const voice = YosaSpeech.getVoiceProfile(state.voiceId);
     const pending = state.homeworks.filter((h) => !h.completed);
 
-    if (state.callReason.toLowerCase().includes("haber") || state.callReason.toLowerCase().includes("gündem")) {
+    if (
+      state.callReason.toLowerCase().includes("haber") ||
+      state.callReason.toLowerCase().includes("gündem")
+    ) {
       speakInCall(
-        `Alo! Merhaba, ben Yosa ${voice.name}. Gündem özeti araması için seni aradım, Google News başlıklarını hemen kontrol ediyorum.`,
+        `Alo! Merhaba, ben Yosa ${voice.name}. Gündem özeti için seni aradım, Google News başlıklarını hemen aktarıyorum.`,
         () => {
           handleUserTurnInCall("Bugün gündemde ne var?");
         }
@@ -596,16 +628,16 @@
     if (state.callReason.toLowerCase().includes("ödev")) {
       const msg =
         pending.length > 0
-          ? `Alo! Merhaba, ben Yosa ${voice.name}. Seni ödev kontrolü için aradım. Şu an bekleyen ${pending.length} ödevin var, ilk sırada ${pending[0].subject} ödevin görünüyor. Detayları okumamı ya da yeni ödev eklememi ister misin?`
-          : `Alo! Merhaba, ben Yosa ${voice.name}. Ödev kontrolü için aradım ama bekleyen hiç ödevin kalmamış, harikasın! Yeni bir ödev kaydetmek ya da haberleri dinlemek ister misin?`;
+          ? `Alo! Merhaba, ben Yosa ${voice.name}. Ödev kontrolü için aradım. Şu an bekleyen ${pending.length} ödevin var, ilk sırada ${pending[0].subject} görünüyor. Okumamı ya da yeni ödev eklememi ister misin?`
+          : `Alo! Merhaba, ben Yosa ${voice.name}. Ödev kontrolü için aradım ama bekleyen ödevin kalmamış. Yeni bir ödev kaydetmek ya da haberleri dinlemek ister misin?`;
       speakInCall(msg);
       return;
     }
 
     const greet =
       pending.length > 0
-        ? `Alo! Merhaba, ben Yosa ${voice.name}. Seni dinliyorum! İstediğin maç veya gündem haberini sorabilir ya da bekleyen ${pending.length} ödevini yönetebilirsin.`
-        : `Alo! Merhaba, ben Yosa ${voice.name}. Seni dinliyorum! Örneğin Galatasaray maçını özetle diyebilir veya ödevlerini sesle kaydettirebilirsin.`;
+        ? `Alo! Merhaba, ben Yosa ${voice.name}. Seni dinliyorum. İstediğin maç veya gündem haberini sorabilir ya da bekleyen ${pending.length} ödevini yönetebilirsin.`
+        : `Alo! Merhaba, ben Yosa ${voice.name}. Seni dinliyorum. Örneğin Galatasaray maçını özetle diyebilir veya ödevlerini sesle kaydettirebilirsin.`;
     speakInCall(greet);
   }
 
@@ -632,8 +664,8 @@
   function speakInCall(text, customAfterSpeak = null) {
     if (state.callState !== "active") return;
     const voice = YosaSpeech.getVoiceProfile(state.voiceId);
-    setVisualizerMode("speaking", `${voice.name} konuşuyor...`);
-    setCaption(`Yosa AI (${voice.name})`, text);
+    setVisualizerMode("speaking", `${voice.name} konuşuyor`);
+    setCaption(`YOSA • ${voice.name}`, text);
     el.labelPushToTalk.textContent = "Sözünü Kes";
 
     YosaSpeech.speak(text, {
@@ -641,7 +673,7 @@
       speedId: state.speedId,
       onStart: () => {
         if (state.callState === "active") {
-          setVisualizerMode("speaking", `${voice.name} konuşuyor...`);
+          setVisualizerMode("speaking", `${voice.name} konuşuyor`);
         }
       },
       onEnd: () => {
@@ -654,7 +686,7 @@
         if (!state.isMuted) {
           listenInCall();
         } else {
-          setVisualizerMode("idle", "Mikrofon sessizde");
+          setVisualizerMode("idle", "Sessizde");
         }
       }
     });
@@ -663,18 +695,18 @@
   function listenInCall() {
     if (state.callState !== "active" || state.isMuted) return;
     YosaRingtones.playListeningCue();
-    setVisualizerMode("listening", "Seni dinliyorum... Konuşabilirsin");
+    setVisualizerMode("listening", "Seni dinliyorum");
     el.labelPushToTalk.textContent = "Dinleniyor";
 
     YosaSpeech.startListening({
       onStart: () => {
         if (state.callState === "active") {
-          setVisualizerMode("listening", "Seni dinliyorum... Konuşabilirsin");
+          setVisualizerMode("listening", "Seni dinliyorum");
         }
       },
       onPartial: (partial) => {
         if (state.callState === "active") {
-          setCaption("Sen (Canlı Ses)", partial);
+          setCaption("SEN", partial);
         }
       },
       onResult: (finalText) => {
@@ -686,8 +718,7 @@
         if (state.callState !== "active") return;
         el.labelPushToTalk.textContent = "Konuş";
         if (err === "no-speech") {
-          setVisualizerMode("idle", "Tekrar konuşmak için 'Konuş' tuşuna dokun");
-          // Gently re-arm listening once after short pause if still active
+          setVisualizerMode("idle", "Konuş tuşuna dokunabilirsin");
           setTimeout(() => {
             if (
               state.callState === "active" &&
@@ -699,10 +730,10 @@
             }
           }, 1600);
         } else if (err === "unsupported") {
-          setVisualizerMode("idle", "Üstteki hazır sesli konulara dokunabilirsin");
-          showToast("Bu tarayıcıda ses tanıma yok; APK içinde tam çalışır!");
+          setVisualizerMode("idle", "Hazır sesli konulara dokunabilirsin");
+          showToast("Tarayıcıda ses tanıma yok; APK içinde tam çalışır");
         } else {
-          setVisualizerMode("idle", "Konuşmak için 'Konuş' tuşuna dokun");
+          setVisualizerMode("idle", "Konuşmak için dokun");
         }
       }
     });
@@ -713,7 +744,7 @@
 
     if (action.type === "add_homework") {
       addHomeworkItem(action.homework);
-      showToast(`📚 ${action.homework.subject} ödevi kaydedildi!`);
+      showToast(`${action.homework.subject} ödevi kaydedildi`);
       return null;
     }
 
@@ -728,9 +759,9 @@
         target.completed = true;
         savePersistedState();
         renderHomeworkLists();
-        return `Harika! ${target.subject} ödevini tamamlandı olarak işaretledim, ellerine sağlık!`;
+        return `Harika, ${target.subject} ödevini tamamlandı olarak işaretledim.`;
       }
-      return "Tamamlanacak bekleyen bir ödev bulamadım ama istersen yeni ödev ekleyebiliriz.";
+      return "Tamamlanacak bekleyen bir ödev bulamadım.";
     }
 
     if (action.type === "delete_homework") {
@@ -747,7 +778,7 @@
         const removed = state.homeworks.splice(idx, 1)[0];
         savePersistedState();
         renderHomeworkLists();
-        return `${removed.subject} ödevini listeden sildim.`;
+        return `${removed.subject} ödevini sildim.`;
       }
       if (state.homeworks.length > 0) {
         const removed = state.homeworks.shift();
@@ -768,8 +799,9 @@
       state.voiceId = nextId;
       savePersistedState();
       renderPrefsLabels();
+      renderAudioStudio();
       const newV = YosaSpeech.getVoiceProfile(nextId);
-      return `Merhaba! Sesimi ${newV.name} olarak değiştirdim. Şimdi bu sesle devam ediyoruz!`;
+      return `Sesimi ${newV.name} olarak değiştirdim. Şimdi bu sesle devam ediyoruz.`;
     }
 
     if (action.type === "schedule_call") {
@@ -789,8 +821,8 @@
     YosaSpeech.stopListening();
     YosaSpeech.stopSpeaking();
 
-    setCaption("Sen", userText);
-    setVisualizerMode("thinking", "Yosa düşünüyor...");
+    setCaption("SEN", userText);
+    setVisualizerMode("thinking", "Düşünüyor...");
 
     const voice = YosaSpeech.getVoiceProfile(state.voiceId);
 
@@ -826,46 +858,48 @@
   }
 
   // =========================================================
-  // Hub Outside-Call Voice Capture (Homework / Timer / General)
+  // Outside-Call Voice Capture (Droplet Tap / Homework / Timer)
   // =========================================================
   function startHubVoiceCapture(mode) {
     YosaRingtones.ensureContext();
     if (YosaSpeech.isListening()) {
       YosaSpeech.stopListening();
-      resetHubMicButtons();
+      resetHubMicUI();
       return;
     }
 
-    state.activeHubMicMode = mode;
     YosaRingtones.playListeningCue();
 
     if (mode === "homework") {
       el.btnVoiceAddHw.classList.add("listening");
-      el.btnVoiceAddHw.innerHTML = "<span>🎙️</span><span>Dinleniyor... Ödevini Söyle</span>";
+      el.labelAddHw.textContent = "Dinleniyor... Ödevini söyle";
+    } else if (mode === "schedule") {
+      switchTab("assistant");
+      el.btnHubVoice.classList.add("listening");
+      el.hubMicLabel.textContent = "Arama zamanını söyle";
+      el.hubVoiceFeedback.textContent = 'Örnek: "İki dakika sonra ödev için beni ara"';
     } else {
       el.btnHubVoice.classList.add("listening");
-      el.hubMicLabel.textContent =
-        mode === "schedule"
-          ? 'Dinleniyor... Örn: "1 dakika sonra ara"'
-          : "Dinleniyor... Sorunu Söyle";
+      el.hubMicLabel.textContent = "Seni dinliyorum...";
+      el.hubVoiceFeedback.textContent = "Konuşmaya başlayabilirsin";
     }
-
-    el.hubVoiceFeedback.classList.remove("hidden");
-    el.hubVoiceFeedback.textContent = "🎙️ Seni dinliyorum...";
 
     YosaSpeech.startListening({
       onPartial: (txt) => {
-        el.hubVoiceFeedback.textContent = `🗣️ "${txt}"`;
+        if (mode !== "homework") {
+          el.hubVoiceFeedback.textContent = txt;
+        } else {
+          el.labelAddHw.textContent = txt;
+        }
       },
       onResult: async (finalText) => {
-        resetHubMicButtons();
-        el.hubVoiceFeedback.textContent = `🗣️ "${finalText}" — İşleniyor...`;
+        resetHubMicUI();
 
         if (mode === "homework") {
           const hw = YosaBrain.extractHomeworkDetails(finalText);
           addHomeworkItem(hw);
           const msg = `${hw.subject} ödevin (${hw.due}) kaydedildi: ${hw.task}`;
-          el.hubVoiceFeedback.textContent = `✅ ${msg}`;
+          showToast(`${hw.subject} ödevi eklendi`);
           YosaSpeech.speak(msg, { voiceId: state.voiceId, speedId: state.speedId });
           return;
         }
@@ -875,14 +909,17 @@
             finalText.includes("ara") ? finalText : finalText + " sonra beni ara"
           );
           const secs = intent.seconds || 60;
-          scheduleIncomingCall(secs, intent.reason || "Zamanlı Yosa AI Araması");
-          const msg = `Tamamdır! ${secs < 60 ? secs + " saniye" : Math.round(secs / 60) + " dakika"} sonra seni arayacağım.`;
-          el.hubVoiceFeedback.textContent = `⏰ ${msg}`;
+          scheduleIncomingCall(secs, intent.reason || "Zamanlı Yosa Araması");
+          const msg = `Tamamdır, ${secs < 60 ? secs + " saniye" : Math.round(secs / 60) + " dakika"} sonra seni arayacağım.`;
+          el.hubMicLabel.textContent = "Zamanlı arama kuruldu";
+          el.hubVoiceFeedback.textContent = msg;
           YosaSpeech.speak(msg, { voiceId: state.voiceId, speedId: state.speedId });
           return;
         }
 
-        // General Hub Voice Command
+        el.hubMicLabel.textContent = "Yanıt hazırlanıyor...";
+        el.hubVoiceFeedback.textContent = finalText;
+
         const voice = YosaSpeech.getVoiceProfile(state.voiceId);
         const res = await YosaBrain.generateVoiceResponse({
           userText: finalText,
@@ -890,68 +927,105 @@
           homeworks: state.homeworks,
           voiceName: voice.name,
           onStatus: (st) => {
-            el.hubVoiceFeedback.textContent = `⏳ ${st}`;
+            el.hubMicLabel.textContent = st;
           }
         });
 
         const override = await executeStructuredAction(res.action);
         const reply =
           override && override !== "hangup_after_speak" ? override : res.reply;
-        el.hubVoiceFeedback.textContent = `🤖 Yosa: ${reply}`;
-        YosaSpeech.speak(reply, { voiceId: state.voiceId, speedId: state.speedId });
+
+        el.hubMicLabel.textContent = `Yosa • ${voice.name}`;
+        el.hubVoiceFeedback.textContent = reply;
+        YosaSpeech.speak(reply, {
+          voiceId: state.voiceId,
+          speedId: state.speedId,
+          onEnd: () => {
+            el.hubMicLabel.textContent = "Dokun ve konuş";
+          }
+        });
       },
       onError: (err) => {
-        resetHubMicButtons();
-        el.hubVoiceFeedback.textContent =
-          err === "unsupported"
-            ? "Bu tarayıcıda ses tanıma desteklenmiyor; Yosa-AI.apk içinde doğrudan çalışır veya alttaki örnek ses tuşlarına dokunabilirsin."
-            : "Ses duyulamadı, tekrar dokunup konuşabilirsin.";
+        resetHubMicUI();
+        if (err === "unsupported") {
+          el.hubVoiceFeedback.textContent =
+            "Tarayıcıda ses tanıma yok; Yosa-AI.apk içinde doğrudan çalışır veya alttaki konulara dokunabilirsin.";
+        } else {
+          showToast("Ses algılanamadı, tekrar dokun");
+        }
       }
     });
   }
 
-  function resetHubMicButtons() {
-    state.activeHubMicMode = null;
+  function resetHubMicUI() {
     el.btnHubVoice.classList.remove("listening");
-    el.hubMicLabel.textContent = "Konuşmak İçin Dokun";
+    el.hubMicLabel.textContent = "Dokun ve konuş";
     el.btnVoiceAddHw.classList.remove("listening");
-    el.btnVoiceAddHw.innerHTML = "<span>🎙️</span><span>Sesle Yeni Ödev Kaydet</span>";
+    el.labelAddHw.textContent = "Sesle Ödev Kaydet";
   }
 
   // =========================================================
-  // Event Listeners Initialization
+  // Initialization
   // =========================================================
   function init() {
-    // Hide APK download button if already running inside the Native Android APK!
     if (window.YosaNative) {
       el.btnDownloadApk.classList.add("hidden");
     }
 
     loadPersistedState();
     renderPrefsLabels();
+    renderAudioStudio();
     renderHomeworkLists();
     renderNewsSources([]);
 
-    // Primary Call Buttons
-    el.btnIncomingNow.onclick = () => {
-      YosaRingtones.ensureContext();
-      triggerIncomingCall("Yosa AI Gelen Arama");
-    };
+    // Bottom Navigation Tabs
+    document.querySelectorAll(".nav-item[data-tab]").forEach((btn) => {
+      btn.onclick = () => switchTab(btn.getAttribute("data-tab"));
+    });
 
-    el.btnOutboundCall.onclick = () => {
-      startOutboundCall(null);
-    };
+    // Header Voice Pill -> Jump to Audio tab
+    el.chipOpenVoices.onclick = () => switchTab("audio");
 
-    // Quick Try Pills on Hub -> Places live call asking that question!
-    document.querySelectorAll("[data-quick-call]").forEach((btn) => {
+    // Segmented Sub-tabs in Tasks Tab
+    document.querySelectorAll("[data-task-sub]").forEach((btn) => {
       btn.onclick = () => {
-        const q = btn.getAttribute("data-quick-call");
-        startOutboundCall(q);
+        const sub = btn.getAttribute("data-task-sub");
+        document.querySelectorAll("[data-task-sub]").forEach((b) =>
+          b.classList.toggle("active", b === btn)
+        );
+        document.getElementById("subview-hw").classList.toggle("active", sub === "hw");
+        document.getElementById("subview-timer").classList.toggle("active", sub === "timer");
       };
     });
 
-    // Scheduled Call Preset Buttons
-    document.querySelectorAll(".timer-btn[data-sec]").forEach((btn) => {
+    // Segmented Sub-tabs in Audio Tab
+    document.querySelectorAll("[data-audio-sub]").forEach((btn) => {
+      btn.onclick = () => {
+        const sub = btn.getAttribute("data-audio-sub");
+        document.querySelectorAll("[data-audio-sub]").forEach((b) =>
+          b.classList.toggle("active", b === btn)
+        );
+        document.getElementById("subview-voices").classList.toggle("active", sub === "voices");
+        document
+          .getElementById("subview-ringtones")
+          .classList.toggle("active", sub === "ringtones");
+      };
+    });
+
+    // Call Actions
+    el.btnIncomingNow.onclick = () => {
+      YosaRingtones.ensureContext();
+      triggerIncomingCall("Sesli Asistan Araması");
+    };
+
+    el.btnOutboundCall.onclick = () => startOutboundCall(null);
+
+    document.querySelectorAll("[data-quick-call]").forEach((btn) => {
+      btn.onclick = () => startOutboundCall(btn.getAttribute("data-quick-call"));
+    });
+
+    // Scheduled Timers
+    document.querySelectorAll(".bento-timer-card[data-sec]").forEach((btn) => {
       btn.onclick = () => {
         YosaRingtones.ensureContext();
         const sec = parseInt(btn.getAttribute("data-sec"), 10);
@@ -969,7 +1043,7 @@
       YosaRingtones.ensureContext();
       const pending = state.homeworks.filter((h) => !h.completed);
       if (pending.length === 0) {
-        showToast("Bekleyen ödevin yok!");
+        showToast("Bekleyen ödev yok");
         YosaSpeech.speak("Şu an bekleyen hiçbir ödevin yok.", {
           voiceId: state.voiceId,
           speedId: state.speedId
@@ -982,7 +1056,7 @@
       YosaSpeech.speak(text, { voiceId: state.voiceId, speedId: state.speedId });
     };
 
-    // Incoming Call Screen Buttons
+    // Incoming Call Screen
     el.btnAnswerCall.onclick = answerIncomingCall;
     el.btnDeclineCall.onclick = endCall;
     el.btnSnoozeCall.onclick = () => {
@@ -1010,7 +1084,7 @@
       if (state.isMuted) {
         YosaSpeech.stopListening();
         if (!YosaSpeech.isSpeaking()) {
-          setVisualizerMode("idle", "Mikrofon sessize alındı");
+          setVisualizerMode("idle", "Sessizde");
         }
       } else if (!YosaSpeech.isSpeaking()) {
         listenInCall();
@@ -1019,17 +1093,17 @@
 
     el.btnCallSpeaker.onclick = () => {
       state.speakerOn = !state.speakerOn;
-      el.btnCallSpeaker.classList.toggle("active-toggle", state.speakerOn);
+      el.btnCallSpeaker.classList.toggle("toggled", state.speakerOn);
       if (window.YosaNative && typeof window.YosaNative.setSpeakerphone === "function") {
         try {
           window.YosaNative.setSpeakerphone(state.speakerOn);
         } catch (_) {}
       }
-      showToast(state.speakerOn ? "🔊 Hoparlör açık" : "🔈 Ahize modu");
+      showToast(state.speakerOn ? "Hoparlör açık" : "Ahize modu");
     };
 
     el.btnCallVoice.onclick = () => {
-      renderVoicesSheet();
+      renderAudioStudio();
       openSheet(el.sheetVoices);
     };
 
@@ -1038,11 +1112,9 @@
       openSheet(el.sheetHwOverlay);
     };
 
-    el.btnCallNews.onclick = () => {
-      openSheet(el.sheetNewsOverlay);
-    };
+    el.btnCallNews.onclick = () => openSheet(el.sheetNewsOverlay);
 
-    document.querySelectorAll(".incall-chip[data-say]").forEach((chip) => {
+    document.querySelectorAll(".glass-chip[data-say]").forEach((chip) => {
       chip.onclick = () => {
         if (state.callState === "active") {
           handleUserTurnInCall(chip.getAttribute("data-say"));
@@ -1050,23 +1122,8 @@
       };
     });
 
-    // Open Voice & Ringtone Sheets from Hub
-    const openVoices = () => {
-      renderVoicesSheet();
-      openSheet(el.sheetVoices);
-    };
-    const openRingtones = () => {
-      renderRingtonesSheet();
-      openSheet(el.sheetRingtones);
-    };
-
-    document.getElementById("btn-open-voices").onclick = openVoices;
-    document.getElementById("chip-open-voices").onclick = openVoices;
-    document.getElementById("btn-open-ringtones").onclick = openRingtones;
-    document.getElementById("chip-open-ringtones").onclick = openRingtones;
-
     el.sheetBackdrop.onclick = () => {
-      YosaRingtones.stopRingtone();
+      if (state.callState !== "incoming") YosaRingtones.stopRingtone();
       closeAllSheets();
     };
     document.querySelectorAll("[data-close-sheet]").forEach((btn) => {
@@ -1076,18 +1133,16 @@
       };
     });
 
-    // Check URL or Native Intent if app was opened from a scheduled incoming call alarm!
     const params = new URLSearchParams(window.location.search);
     if (params.get("incoming") === "1") {
       setTimeout(() => {
-        triggerIncomingCall(params.get("reason") || "Zamanlı Yosa AI Araması");
+        triggerIncomingCall(params.get("reason") || "Zamanlı Yosa Araması");
       }, 350);
     }
   }
 
   function updateMuteUI() {
-    el.btnCallMute.classList.toggle("muted-toggle", state.isMuted);
-    el.icoMute.textContent = state.isMuted ? "🔇" : "🎤";
+    el.btnCallMute.classList.toggle("toggled", state.isMuted);
     el.labelMute.textContent = state.isMuted ? "Sessizde" : "Sessiz";
   }
 
